@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Convolution Studio</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='favicon.svg') }}"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="page-glow page-glow-left"></div>
+      <div class="page-glow page-glow-right"></div>
+
+      <header class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">PyTorch-faithful learning playground</p>
+          <h1>See every convolution unfold clearly.</h1>
+          <p class="hero-text">
+            Build 2D image arrays or 3D volumes, adjust real PyTorch convolution
+            settings, and study the exact computation with readable arrays,
+            guided traces, and an animation that walks through each output cell.
+          </p>
+          <div class="hero-badges">
+            <span class="badge">2D by default</span>
+            <span class="badge">3D volumes too</span>
+            <span class="badge">Groups, bias, stride, dilation</span>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="mini-note">
+            <h2>Made for first-time learners</h2>
+            <p>
+              Arrays are separated by channel and slice so they read like real
+              tensors instead of overlapping blobs.
+            </p>
+            <p>
+              You can inspect the result in array form, click individual output
+              values, and generate an animation of how the operator fills the
+              output tensor.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel controls-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">1. Configure the operator</p>
+              <h2>Setup</h2>
+            </div>
+            <div class="status-pill" id="output-shape-badge">Output shape: --</div>
+          </div>
+
+          <div class="controls-grid controls-grid-wide">
+            <div class="control-block">
+              <div class="control-label-row">
+                <label for="dimensions">Learning mode</label>
+                <button class="ghost-button" id="example-button" type="button">
+                  Load example
+                </button>
+              </div>
+              <div class="field-grid">
+                <div class="shape-field">
+                  <span>spatial dimensions</span>
+                  <select id="dimensions">
+                    <option value="2">2D</option>
+                    <option value="3">3D</option>
+                  </select>
+                </div>
+                <div class="shape-field">
+                  <span>operation</span>
+                  <select id="operation">
+                    <option value="conv">Convolution</option>
+                    <option value="conv_transpose">Transposed convolution</option>
+                  </select>
+                </div>
+              </div>
+              <p class="help-text">
+                <span id="operation-help">
+                  Standard convolution uses PyTorch cross-correlation semantics.
+                </span>
+              </p>
+            </div>
+
+            <div class="control-block">
+              <label>Array and kernel sizes</label>
+              <div class="control-subsection">
+                <span class="subsection-label">Image / volume size</span>
+                <div class="shape-inputs" id="input-shape-controls"></div>
+              </div>
+              <div class="control-subsection">
+                <span class="subsection-label">Kernel size</span>
+                <div class="shape-inputs" id="kernel-shape-controls"></div>
+              </div>
+            </div>
+
+            <div class="control-block">
+              <div class="control-label-row">
+                <label>Channels, groups, bias</label>
+                <button class="ghost-button" id="randomize-button" type="button">
+                  Randomize values
+                </button>
+              </div>
+              <div class="field-grid field-grid-3">
+                <div class="shape-field">
+                  <span>input channels</span>
+                  <input id="input-channels" type="number" min="1" step="1" />
+                </div>
+                <div class="shape-field">
+                  <span>output channels</span>
+                  <input id="output-channels" type="number" min="1" step="1" />
+                </div>
+                <div class="shape-field">
+                  <span>groups</span>
+                  <select id="groups"></select>
+                </div>
+              </div>
+              <label class="checkbox-row" for="bias-enabled">
+                <input id="bias-enabled" type="checkbox" />
+                <span>Enable a bias value for every output channel</span>
+              </label>
+            </div>
+
+            <div class="control-block">
+              <label>Convolution parameters</label>
+              <div class="parameter-stack">
+                <div class="parameter-row">
+                  <span class="subsection-label">Stride</span>
+                  <div class="shape-inputs" id="stride-controls"></div>
+                </div>
+                <div class="parameter-row">
+                  <span class="subsection-label">Padding</span>
+                  <div class="shape-inputs" id="padding-controls"></div>
+                </div>
+                <div class="parameter-row">
+                  <span class="subsection-label">Dilation</span>
+                  <div class="shape-inputs" id="dilation-controls"></div>
+                </div>
+                <div class="parameter-row hidden" id="output-padding-block">
+                  <span class="subsection-label">Output padding</span>
+                  <div class="shape-inputs" id="output-padding-controls"></div>
+                </div>
+              </div>
+              <p class="help-text">
+                Output padding is only used by PyTorch transposed convolution.
+              </p>
+            </div>
+          </div>
+
+          <div class="summary-bar" id="problem-summary"></div>
+        </section>
+
+        <section class="panel editor-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">2. Fill the tensors</p>
+              <h2>Input, weights, and bias</h2>
+            </div>
+            <div class="action-row">
+              <button class="primary-button" id="calculate-button" type="button">
+                Calculate
+              </button>
+              <button
+                class="ghost-button"
+                id="generate-animation-button"
+                type="button"
+                disabled
+              >
+                Generate animation
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-grid editor-grid-wide">
+            <div class="tensor-card">
+              <div class="tensor-card-header">
+                <h3>Input tensor</h3>
+                <p id="input-shape-label"></p>
+              </div>
+              <div id="input-editor" class="tensor-editor"></div>
+            </div>
+
+            <div class="tensor-card">
+              <div class="tensor-card-header">
+                <h3>Weight tensor</h3>
+                <p id="kernel-shape-label"></p>
+              </div>
+              <div id="kernel-editor" class="tensor-editor"></div>
+            </div>
+
+            <div class="tensor-card" id="bias-card">
+              <div class="tensor-card-header">
+                <h3>Bias vector</h3>
+                <p id="bias-shape-label"></p>
+              </div>
+              <div id="bias-editor" class="bias-editor"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel results-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">3. Read the result</p>
+              <h2>Output tensor</h2>
+            </div>
+            <div class="status-pill" id="semantics-pill">PyTorch semantics</div>
+          </div>
+          <div id="result-error" class="error-banner hidden"></div>
+          <div id="result-summary" class="result-summary"></div>
+
+          <div class="results-grid">
+            <div class="result-column">
+              <h3 class="result-heading">Array form</h3>
+              <div id="output-array-render" class="output-render"></div>
+            </div>
+            <div class="result-column">
+              <h3 class="result-heading">Clickable explorer</h3>
+              <div id="output-card-render" class="output-render"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel animation-panel hidden" id="animation-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">4. Watch it happen</p>
+              <h2>Kernel animation</h2>
+            </div>
+            <div class="action-row">
+              <button class="ghost-button" id="prev-frame-button" type="button">
+                Previous
+              </button>
+              <button class="primary-button" id="play-animation-button" type="button">
+                Play
+              </button>
+              <button class="ghost-button" id="next-frame-button" type="button">
+                Next
+              </button>
+            </div>
+          </div>
+
+          <div class="animation-meta">
+            <div class="status-pill" id="animation-status">Frame --</div>
+            <p class="result-summary" id="animation-caption"></p>
+          </div>
+
+          <div class="animation-stage">
+            <div class="animation-card">
+              <h3>Source tensor</h3>
+              <div id="animation-input-render" class="output-render"></div>
+            </div>
+            <div class="animation-card">
+              <h3>Kernel / active weights</h3>
+              <div id="animation-kernel-render" class="output-render"></div>
+            </div>
+            <div class="animation-card">
+              <h3>Output tensor</h3>
+              <div id="animation-output-render" class="output-render"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel trace-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">5. Inspect every calculation</p>
+              <h2>Step-by-step trace</h2>
+            </div>
+            <p class="trace-help">
+              Each card explains one output value with readable arrays and the
+              exact arithmetic PyTorch performs.
+            </p>
+          </div>
+          <div id="trace-render" class="trace-render"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
