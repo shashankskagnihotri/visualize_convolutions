@@ -228,15 +228,19 @@ select {
 }
 
 .editor-grid {
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
 }
 
 .control-block,
 .tensor-card,
 .slice-card,
 .output-slice,
-.trace-card {
+.trace-card,
+.result-column,
+.contribution-card,
+.animation-card {
   position: relative;
+  min-width: 0;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.035);
@@ -318,6 +322,12 @@ label {
   gap: 10px;
 }
 
+.panel-note {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .shape-inputs {
   align-items: center;
 }
@@ -389,6 +399,7 @@ button:hover {
 
 .tensor-card {
   padding: 18px;
+  overflow: hidden;
 }
 
 .tensor-card-header {
@@ -414,6 +425,7 @@ button:hover {
 .slice-card,
 .output-slice {
   padding: 16px;
+  overflow: hidden;
 }
 
 .slice-card h4,
@@ -423,18 +435,49 @@ button:hover {
 
 .matrix-table {
   width: max-content;
-  max-width: 100%;
+  max-width: none;
   border-collapse: separate;
-  border-spacing: 8px;
+  border-spacing: 6px;
 }
 
 .matrix-table td {
   padding: 0;
 }
 
+.matrix-viewport {
+  position: relative;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.matrix-scroll {
+  max-width: 100%;
+  overflow: auto hidden;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(119, 193, 255, 0.55) rgba(255, 255, 255, 0.06);
+}
+
+.matrix-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.matrix-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.matrix-scroll::-webkit-scrollbar-thumb {
+  background: rgba(119, 193, 255, 0.48);
+  border-radius: 999px;
+}
+
 .matrix-input {
-  width: 84px;
-  min-width: 84px;
+  width: 72px;
+  min-width: 72px;
+  padding: 10px 8px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -444,9 +487,9 @@ button:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 76px;
-  min-height: 52px;
-  padding: 12px 14px;
+  min-width: 68px;
+  min-height: 46px;
+  padding: 10px 12px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -513,11 +556,12 @@ button:hover {
 }
 
 .trace-render {
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
 }
 
 .trace-card {
   padding: 18px;
+  overflow: hidden;
 }
 
 .trace-meta {
@@ -535,7 +579,7 @@ button:hover {
 
 .trace-grids {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -545,6 +589,8 @@ button:hover {
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .mini-grid-card h4 {
@@ -611,6 +657,7 @@ button:hover {
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
 }
 
 .contribution-card + .contribution-card {
@@ -627,7 +674,7 @@ button:hover {
 
 .animation-stage {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
 }
 
@@ -635,6 +682,38 @@ button:hover {
   margin: 0 0 14px;
   font-family: "Iowan Old Style", "Palatino Linotype", serif;
   letter-spacing: -0.02em;
+}
+
+.animation-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.animation-detail-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.animation-detail-card-main {
+  grid-column: 1 / -1;
+}
+
+.animation-detail-card h3,
+.animation-detail-card h4 {
+  margin: 0 0 12px;
+  font-family: "Iowan Old Style", "Palatino Linotype", serif;
+  letter-spacing: -0.02em;
+}
+
+.animation-metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .hidden {
@@ -673,6 +752,7 @@ code {
   .editor-grid,
   .results-grid,
   .animation-stage,
+  .animation-details,
   .trace-grids {
     grid-template-columns: 1fr;
   }
@@ -706,8 +786,8 @@ code {
 
   .matrix-input,
   .matrix-value {
-    min-width: 62px;
-    width: 62px;
+    min-width: 58px;
+    width: 58px;
     min-height: 44px;
     padding: 10px;
   }

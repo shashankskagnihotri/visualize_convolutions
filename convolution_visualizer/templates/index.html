@@ -176,6 +176,11 @@
               </button>
             </div>
           </div>
+          <p class="panel-note">
+            Large tensors stay inside their own card. If a matrix is wider than
+            the panel, scroll inside that matrix area instead of losing fields
+            off-screen.
+          </p>
 
           <div class="editor-grid editor-grid-wide">
             <div class="tensor-card">
@@ -265,6 +270,8 @@
               <div id="animation-output-render" class="output-render"></div>
             </div>
           </div>
+
+          <div id="animation-details" class="animation-details"></div>
         </section>
 
         <section class="panel trace-panel">

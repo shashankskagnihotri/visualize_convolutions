@@ -447,6 +447,7 @@ const elements = {
   animationInputRender: document.getElementById("animation-input-render"),
   animationKernelRender: document.getElementById("animation-kernel-render"),
   animationOutputRender: document.getElementById("animation-output-render"),
+  animationDetails: document.getElementById("animation-details"),
   traceRender: document.getElementById("trace-render"),
   exampleButton: document.getElementById("example-button"),
   randomizeButton: document.getElementById("randomize-button"),
@@ -457,6 +458,58 @@ function summaryPill(label, value) {
   pill.className = "summary-pill";
   pill.textContent = `${label}: ${value}`;
   return pill;
+}
+
+function statusPill(text) {
+  const pill = document.createElement("span");
+  pill.className = "status-pill";
+  pill.textContent = text;
+  return pill;
+}
+
+function createMatrixViewport(contentNode) {
+  const viewport = document.createElement("div");
+  viewport.className = "matrix-viewport";
+
+  const scroller = document.createElement("div");
+  scroller.className = "matrix-scroll";
+  scroller.append(contentNode);
+
+  viewport.append(scroller);
+  return viewport;
+}
+
+function buildTermsList(mode, contribution) {
+  const terms = document.createElement("div");
+  terms.className = "terms-list";
+
+  if (contribution.terms.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "term-chip empty-note";
+    empty.textContent = "No contributions for this channel at the selected output position.";
+    terms.append(empty);
+    return terms;
+  }
+
+  contribution.terms.forEach((term) => {
+    const chip = document.createElement("span");
+    chip.className = "term-chip";
+    if (mode === "conv") {
+      chip.textContent =
+        `${term.input_index ? `x[${term.input_index.join(",")}]` : "padding"}=` +
+        `${formatNumber(term.input_value)} x ` +
+        `w[${term.kernel_index.join(",")}]=${formatNumber(term.kernel_value)} ` +
+        `= ${formatNumber(term.product)}`;
+    } else {
+      chip.textContent =
+        `x[${term.input_index.join(",")}]=${formatNumber(term.input_value)} x ` +
+        `w[${term.kernel_index.join(",")}]=${formatNumber(term.kernel_value)} ` +
+        `= ${formatNumber(term.product)}`;
+    }
+    terms.append(chip);
+  });
+
+  return terms;
 }
 
 function stopAnimationPlayback() {
@@ -476,6 +529,7 @@ function clearAnimation() {
   elements.animationInputRender.replaceChildren();
   elements.animationKernelRender.replaceChildren();
   elements.animationOutputRender.replaceChildren();
+  elements.animationDetails.replaceChildren();
   elements.animationCaption.textContent = "";
   elements.animationStatus.textContent = "Frame --";
 }
@@ -602,7 +656,12 @@ function appendSpatialEditor(container, rootValues, spatialShape, pathPrefix, la
     block.className = "mini-grid-card";
     const heading = document.createElement("h4");
     heading.textContent = title;
-    block.append(heading, buildMatrixEditor(rootValues, spatialShape, pathPrefix, labelPrefix));
+    block.append(
+      heading,
+      createMatrixViewport(
+        buildMatrixEditor(rootValues, spatialShape, pathPrefix, labelPrefix),
+      ),
+    );
     container.append(block);
     return;
   }
@@ -617,11 +676,13 @@ function appendSpatialEditor(container, rootValues, spatialShape, pathPrefix, la
     heading.textContent = `${title} | depth ${depth}`;
     block.append(
       heading,
-      buildMatrixEditor(
-        rootValues,
-        spatialShape.slice(1),
-        [...pathPrefix, depth],
-        `${labelPrefix} depth ${depth}`,
+      createMatrixViewport(
+        buildMatrixEditor(
+          rootValues,
+          spatialShape.slice(1),
+          [...pathPrefix, depth],
+          `${labelPrefix} depth ${depth}`,
+        ),
       ),
     );
     stack.append(block);
@@ -643,7 +704,12 @@ function appendSpatialPreview(
     block.className = "mini-grid-card";
     const heading = document.createElement("h4");
     heading.textContent = title;
-    block.append(heading, buildMatrixPreview(spatialValues, highlightSet, targetSet, []));
+    block.append(
+      heading,
+      createMatrixViewport(
+        buildMatrixPreview(spatialValues, highlightSet, targetSet, []),
+      ),
+    );
     container.append(block);
     return;
   }
@@ -658,11 +724,13 @@ function appendSpatialPreview(
     heading.textContent = `${title} | depth ${depth}`;
     block.append(
       heading,
-      buildMatrixPreview(
-        spatialValues[depth],
-        highlightSet,
-        targetSet,
-        [depth],
+      createMatrixViewport(
+        buildMatrixPreview(
+          spatialValues[depth],
+          highlightSet,
+          targetSet,
+          [depth],
+        ),
       ),
     );
     stack.append(block);
@@ -1029,34 +1097,7 @@ function renderTraceContribution(result, entry, contribution) {
   formula.className = "formula";
   formula.textContent = contribution.expression;
   block.append(formula);
-
-  const terms = document.createElement("div");
-  terms.className = "terms-list";
-  if (contribution.terms.length === 0) {
-    const empty = document.createElement("span");
-    empty.className = "term-chip empty-note";
-    empty.textContent = "No contributions for this channel at the selected output position.";
-    terms.append(empty);
-  } else {
-    contribution.terms.forEach((term) => {
-      const chip = document.createElement("span");
-      chip.className = "term-chip";
-      if (entry.mode === "conv") {
-        chip.textContent =
-          `${term.input_index ? `x[${term.input_index.join(",")}]` : "padding"}=` +
-          `${formatNumber(term.input_value)} x ` +
-          `w[${term.kernel_index.join(",")}]=${formatNumber(term.kernel_value)} ` +
-          `= ${formatNumber(term.product)}`;
-      } else {
-        chip.textContent =
-          `x[${term.input_index.join(",")}]=${formatNumber(term.input_value)} x ` +
-          `w[${term.kernel_index.join(",")}]=${formatNumber(term.kernel_value)} ` +
-          `= ${formatNumber(term.product)}`;
-      }
-      terms.append(chip);
-    });
-  }
-  block.append(terms);
+  block.append(buildTermsList(entry.mode, contribution));
 
   return block;
 }
@@ -1145,6 +1186,7 @@ function renderAnimationFrame() {
   elements.animationInputRender.replaceChildren();
   elements.animationKernelRender.replaceChildren();
   elements.animationOutputRender.replaceChildren();
+  elements.animationDetails.replaceChildren();
 
   frame.channel_contributions.forEach((contribution) => {
     const inputCard = document.createElement("div");
@@ -1195,6 +1237,44 @@ function renderAnimationFrame() {
     outputHighlight,
   );
   elements.animationOutputRender.append(outputCard);
+
+  const overview = document.createElement("div");
+  overview.className = "animation-detail-card animation-detail-card-main";
+
+  const overviewHeading = document.createElement("h3");
+  overviewHeading.textContent = `Current output value: [${frame.full_output_index.join(", ")}]`;
+
+  const metricRow = document.createElement("div");
+  metricRow.className = "animation-metric-row";
+  metricRow.append(
+    statusPill(`value ${formatNumber(frame.output_value)}`),
+    statusPill(`pre-bias ${formatNumber(frame.pre_bias_value)}`),
+    statusPill(
+      `bias ${frame.bias_value === null ? "off" : formatNumber(frame.bias_value)}`,
+    ),
+  );
+
+  const overviewFormula = document.createElement("p");
+  overviewFormula.className = "formula";
+  overviewFormula.textContent = `${frame.expression} = ${formatNumber(frame.output_value)}`;
+
+  overview.append(overviewHeading, metricRow, overviewFormula);
+  elements.animationDetails.append(overview);
+
+  frame.channel_contributions.forEach((contribution) => {
+    const detail = document.createElement("div");
+    detail.className = "animation-detail-card";
+
+    const heading = document.createElement("h4");
+    heading.textContent = `Input channel ${contribution.input_channel}`;
+
+    const formula = document.createElement("p");
+    formula.className = "formula";
+    formula.textContent = contribution.expression;
+
+    detail.append(heading, formula, buildTermsList(frame.mode, contribution));
+    elements.animationDetails.append(detail);
+  });
 }
 
 function buildAnimationFrames() {
