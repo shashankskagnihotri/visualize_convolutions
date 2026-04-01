@@ -4,6 +4,8 @@ An interactive browser-based learning tool for bachelor students learning convol
 
 The app launches from Python, opens in your browser, and lets you build tensors, weights, and bias values by hand. It computes the real result with PyTorch and then explains the operation with readable arrays, clickable output values, and an animation that walks through the output tensor step by step.
 
+This app/tool merely helps you visualize how the implementation of the convolution operation works, if you are looking for a resource to learn about convolutions and how they work, I can recommend: [https://cs231n.github.io/convolutional-networks/](https://cs231n.github.io/convolutional-networks/).
+
 ## What It Does
 
 - Uses real PyTorch ops for the final answer:
